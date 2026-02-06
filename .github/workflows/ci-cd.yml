@@ -2,8 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "develop", "main", "master" ]
   pull_request:
+    branches: [ "develop" ]
 
 jobs:
   build:
@@ -46,8 +47,21 @@ jobs:
     name: Deploy (Docker Compose over SSH)
     runs-on: ubuntu-latest
     needs: [build, test]
-    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master' || github.ref_name =='develop')
+    # Используем ref вместо ref_name для надежности
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
     steps:
+      # Отладка
+      - name: Debug deployment trigger
+        run: |
+          echo "=== Отладочная информация ==="
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Ref name: ${{ github.ref_name }}"
+          echo "Head ref: ${{ github.head_ref }}"
+          echo "Base ref: ${{ github.base_ref }}"
+          echo "Should deploy: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop') }}"
+          echo "=========================="
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -74,9 +88,27 @@ jobs:
             git checkout ${{ github.ref_name }}
             git reset --hard origin/${{ github.ref_name }}
 
-            # 2) пересобираем/поднимаем контейнеры
+            # 2) Создаем .env файл из секретов
+            cat > .env << EOF
+            # PostgreSQL Settings
+            POSTGRES_DB=${{ secrets.DB_NAME }}
+            POSTGRES_USER=${{ secrets.DB_USER }}
+            POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+            # Spring Boot Datasource
+            SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${{ secrets.DB_NAME }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+            SPRING_DATASOURCE_HOST=postgres
+
+            # Application Settings
+            SERVER_PORT=8080
+            SPRING_PROFILES_ACTIVE=prod
+            EOF
+
+            # 3) пересобираем/поднимаем контейнеры
             docker compose pull || true
             docker compose up -d --build
 
-            # 3) чистим старые образы (по желанию)
+            # 4) чистим старые образы (по желанию)
             docker image prune -f
