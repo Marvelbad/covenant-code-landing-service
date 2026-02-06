@@ -1,39 +1,33 @@
-version: '3.9'  # Версия синтаксиса Docker Compose
-
 services:
   postgres:
-    image: postgres:16  # Используем официальный образ PostgreSQL версии 16
-    container_name: covenant_postgres  # Имя контейнера, чтобы его проще идентифицировать
-    restart: always  # Автоматический перезапуск контейнера при падении
+    image: postgres:16
+    container_name: covenant_postgres
+    restart: always
     env_file:
-      - credential.env  # Подключаем файл с переменными окружения для БД
+      - .env  # Убедитесь что здесь .env, не credential.env
     ports:
-      - "5432:5432"  # Пробрасываем порт 5432 наружу (host:container), чтобы можно было подключаться с локальной машины
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Монтируем volume для хранения данных БД, чтобы они не терялись при перезапуске контейнера
     networks:
-      - covenant-net  # Подключаем контейнер к общей сети Docker для взаимодействия с приложением
+      - covenant-net
 
   app:
-    build: .  # Собираем Docker образ приложения из текущей директории
-    container_name: covenant_app  # Имя контейнера для приложения
+    build: .
+    container_name: covenant_app
     depends_on:
-      - postgres  # Указываем зависимость: контейнер app стартует после postgres
+      - postgres
     env_file:
-      - credential.env  # Подключаем тот же файл с переменными окружения
+      - .env  # Убедитесь что здесь .env, не credential.env
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # Устанавливаем активный профиль Spring Boot, чтобы использовать prod-конфигурацию с PostgreSQL
     ports:
-      - "8082:8082"  # Пробрасываем порт приложения наружу (host:container)
+      - "8080:8080"
     networks:
-      - covenant-net  # Подключаем контейнер приложения к той же сети, что и БД
+      - covenant-net
 
 volumes:
   postgres_data:
-  # Определяем volume для хранения данных PostgreSQL вне контейнера (persistency)
 
 networks:
   covenant-net:
-  # Определяем отдельную сеть Docker для изоляции сервисов и их взаимодействия
