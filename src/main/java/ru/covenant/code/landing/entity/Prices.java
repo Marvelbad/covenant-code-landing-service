@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.covenant.code.landing.entity.enumerated.Status;
+import ru.covenant.code.landing.entity.enumerated.Tariff;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -12,20 +14,29 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "clients_db")
-public class Clients {
+@Table(name = "prices_db")
+public class Prices {
 
     @Id
     @GeneratedValue
-    private UUID id;
-    private String name;
-    private String phone;
-    private String email;
-    private String message;
+    private Integer id;
+
+    @Column(nullable = false)
+    private String direction;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "VARCHAR DEFAULT 'NEW'")
-    private Status status;
+    @Column(nullable = false)
+    private Tariff tariff;
+
+    @Column(nullable = false)
+    private BigDecimal price;
+
+    @Column(nullable = false)
+    private Boolean isVisible = true;
+
+    private LocalDate validFrom;
+
+    private LocalDate validTo;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;

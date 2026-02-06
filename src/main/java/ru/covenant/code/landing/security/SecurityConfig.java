@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +48,8 @@ public class SecurityConfig {
                                 "/js/**",                         // JavaScript файлы
                                 "/images/**",                     // Изображения
                                 "/webjars/**",                    // WebJars
-                                "/h2-console/**"                  // H2 Console
+                                "/h2-console/**",                 // H2 Console
+                                "/prices", "/prices/**"         //Публичный API цен
                         ).permitAll()
 
                         // ЗАКРЫТЫЕ маршруты (только для админов)
@@ -57,6 +59,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers(
                                 "/h2-console/**",
                                 "/v1/registerForm",
