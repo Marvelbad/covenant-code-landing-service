@@ -64,7 +64,12 @@ jobs:
               git clone https://github.com/${{ github.repository }}.git "${{ secrets.DEPLOY_PATH }}"
             fi
 
+            # Создаем директорию если нет
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH || '/var/www/app' }}"
+            mkdir -p "$DEPLOY_PATH"
+
             cd "${{ secrets.DEPLOY_PATH }}"
+            
             git fetch --all --prune
             git checkout ${{ github.ref_name }}
             git reset --hard origin/${{ github.ref_name }}
