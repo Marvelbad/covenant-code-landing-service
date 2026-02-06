@@ -19,4 +19,9 @@ public class ResponseWrapper<T> {
     public static <T> ResponseWrapper<T> error(T error) {
         return new ResponseWrapper<>(false, error);
     }
+
+    public static ResponseWrapper<Void> success() {
+        return new ResponseWrapper<>(true, null);
+    }
+
 }
