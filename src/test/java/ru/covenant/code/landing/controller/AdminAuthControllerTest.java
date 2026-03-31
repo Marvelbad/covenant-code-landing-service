@@ -19,6 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import ru.covenant.code.landing.dto.admin.request.AdminLoginRqDto;
 import ru.covenant.code.landing.dto.admin.response.AdminLoginRsDto;
 import ru.covenant.code.landing.error.ResponseWrapper;
@@ -90,7 +91,6 @@ class AdminAuthControllerTest {
         verify(adminUserService, times(1)).updateLastLogin(validLoginRequest);
         verifyNoInteractions(authenticationManager);
     }
-
 
 
     @Test
@@ -189,4 +189,72 @@ class AdminAuthControllerTest {
 
         assertTrue(parameters[0].isAnnotationPresent(Valid.class));
     }
+
+    @Test
+    @DisplayName("Успешный выход для роли ADMIN, контекст должен быть очищен и метод должен вернуть код 200 ОК")
+    void logout_Success_ForAdmin_ShouldClearContextAndReturn200WithSuccess() {
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "admin@covenantcode.ru",
+                "admin123",
+                List.of(new SimpleGrantedAuthority("ADMIN")));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        ResponseEntity<ResponseWrapper<Void>> response = adminAuthController.logout();
+
+        assertAll(
+                () -> assertEquals(HttpStatus.OK, response.getStatusCode()),
+                () -> assertNotNull(response.getBody()),
+                () -> assertTrue(response.getBody().isSuccess()),
+                () -> assertNull(response.getBody().getResult()),
+                () -> assertNull(response.getBody().getError())
+        );
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    @DisplayName("Успешный выход для роли SUPER_ADMIN")
+    void logout_Success_ForSuperAdmin_ShouldWork() {
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "super@covenantcode.ru",
+                "super123",
+                List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        ResponseEntity<ResponseWrapper<Void>> response = adminAuthController.logout();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+    }
+
+    @Test
+    @DisplayName("Успешный выход для роли MODERATOR")
+    void logout_Success_ForModerator_ShouldWork() {
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "moderator@covenantcode.ru",
+                "mod123",
+                List.of(new SimpleGrantedAuthority("ROLE_MODERATOR"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        ResponseEntity<ResponseWrapper<Void>> response = adminAuthController.logout();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+    }
+
+    @Test
+    @DisplayName("Выход без аутентификации")
+    void logout_WithoutAuthentication_ShouldStillReturnSuccess() {
+        SecurityContextHolder.clearContext();
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+
+        ResponseEntity<ResponseWrapper<Void>> response = adminAuthController.logout();
+
+        assertAll(
+                () -> assertEquals(HttpStatus.OK, response.getStatusCode()),
+                () -> assertTrue(response.getBody().isSuccess()),
+                () -> assertNull(SecurityContextHolder.getContext().getAuthentication())
+        );
+    }
+
 }
