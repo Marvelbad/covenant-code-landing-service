@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -81,4 +82,25 @@ public class AdminAuthController {
                     ));
         }
     }
+
+    @Operation(
+            summary = "Выход из системы (API)",
+            description = "Завершает текущую сессию пользователя через REST API"
+    )
+
+    @ApiResponse(
+            responseCode = "200",
+            description = "Завершение сессии",
+            content = @Content(schema = @Schema(implementation = ResponseWrapper.class))
+    )
+
+    @PostMapping("/logout")
+    public ResponseEntity<ResponseWrapper<Void>> logout() {
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.
+                status(HttpStatus.OK)
+                .body(ResponseWrapper.success());
+    }
+
+
 }
