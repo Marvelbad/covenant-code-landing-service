@@ -85,10 +85,6 @@ class ClientsMapperTest {
                 .processedBy(null)
                 .build();
 
-        // SetUp Дмитрия
-
-
-
         existingClient = new Clients();
         existingClient.setId(UUID.randomUUID());
         existingClient.setName("Иван Петров");
@@ -343,23 +339,6 @@ class ClientsMapperTest {
     private Clients existingClient;
     private OffsetDateTime initialUpdatedAt;
 
-//        existingClient = new Clients();
-//        existingClient.setId(UUID.randomUUID());
-//        existingClient.setName("Иван Петров");
-//        existingClient.setEmail("ivan@example.com");
-//        existingClient.setPhone("+79161234567");
-//        existingClient.setMessage("Старое сообщение");
-//        existingClient.setCourseType(CourseType.BACKEND);
-//        existingClient.setStatus(Status.NEW);
-//        existingClient.setPriority(Priority.MEDIUM);
-//        existingClient.setSource("Лендинг");
-//        existingClient.setProcessedBy(null);
-//        existingClient.setProcessedAt(null);
-//
-//        initialUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1);
-//        existingClient.setUpdatedAt(initialUpdatedAt);
-//    }
-
     @Test
     @DisplayName("updateEntity - полное обновление всех полей")
     void updateEntity_WithFullDto_ShouldUpdateAllFields() {
@@ -576,34 +555,25 @@ class ClientsMapperTest {
     @Test
     @DisplayName("updateEntity - невалидные строки в Enum не обновляют поля")
     void updateEntity_WithInvalidEnumStrings_ShouldNotUpdateFields() {
-        // Given
+
         ClientsUpdateRqDto dtoWithInvalidEnums = ClientsUpdateRqDto.builder()
                 .courseType("INVALID_COURSE")
                 .status("INVALID_STATUS")
                 .priority("INVALID_PRIORITY")
                 .build();
 
-        // When
         clientsMapper.updateEntity(existingClient, dtoWithInvalidEnums);
-
-//        // Then
-//        // Поля остались прежними
-//        assertEquals(CourseType.BACKEND, existingClient.getCourseType());
-//        assertEquals(Status.NEW, existingClient.getStatus());
-//        assertEquals(Priority.MEDIUM, existingClient.getPriority());
 
         assertNull(existingClient.getCourseType());
         assertNull(existingClient.getStatus());
         assertNull(existingClient.getPriority());
 
-        // Остальные поля не изменились
         assertEquals("Иван Петров", existingClient.getName());
         assertEquals("ivan@example.com", existingClient.getEmail());
         assertEquals("+79161234567", existingClient.getPhone());
         assertEquals("Старое сообщение", existingClient.getMessage());
         assertEquals("Лендинг", existingClient.getSource());
 
-        // updatedAt обновился
         assertNotNull(existingClient.getUpdatedAt());
     }
 
@@ -901,10 +871,8 @@ class ClientsMapperTest {
         loginStats.setTotalApplications(100L);
         loginStats.setSuccessfulApplications(50L);
 
-        // When
         ClientsStatsRsDto result = clientsMapper.toClientsStats(loginStats);
 
-        // Then
         assertNotNull(result);
         assertEquals(10L, result.getTodayCount());
         assertEquals(100L, result.getTotal());
@@ -931,10 +899,8 @@ class ClientsMapperTest {
         client.setCourseType(CourseType.BACKEND);
         client.setCreatedAt(OffsetDateTime.now());
 
-        // When
         ClientsCreateRsDto result = clientsMapper.toCreateResponse(client);
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getResult());
         assertEquals(clientId, result.getResult().getId());
@@ -945,5 +911,110 @@ class ClientsMapperTest {
         assertNotNull(result.getResult().getCreatedAt());
         assertEquals("SUCCESS", result.getResult().getStatus());
         assertEquals("Заявка успешно создана", result.getMessage());
+    }
+
+    @Test
+    @DisplayName("createStatsDto: создание DTO с различными значениями — все поля установлены корректно")
+    void createStatsDto_ShouldCreateDtoWithVariousValues_AndSetAllFields() {
+        ClientsStatsRsDto dto = clientsMapper.createStatsDto(
+                100L, // total
+                10L,  // newCount
+                20L,  // processedCount
+                30L,  // doneCount
+                5L,   // todayCount
+                40L,  // fullstackCount
+                25L,  // frontendCount
+                35L,  // backendCount
+                7L,   // highPriorityCount
+                8L,   // mediumPriorityCount
+                9L    // lowPriorityCount
+        );
+
+        assertNotNull(dto);
+
+        assertEquals(100L, dto.getTotal());
+        assertEquals(10L, dto.getNewCount());
+        assertEquals(20L, dto.getProcessedCount());
+        assertEquals(30L, dto.getDoneCount());
+        assertEquals(5L, dto.getTodayCount());
+
+        assertEquals(40L, dto.getFullstackCount());
+        assertEquals(25L, dto.getFrontendCount());
+        assertEquals(35L, dto.getBackendCount());
+
+        assertEquals(7L, dto.getHighPriorityCount());
+        assertEquals(8L, dto.getMediumPriorityCount());
+        assertEquals(9L, dto.getLowPriorityCount());
+    }
+
+    @Test
+    @DisplayName("createStatsDto: проверка порядка параметров (каждое поле получает своё значение)")
+    void createStatsDto_ShouldRespectParameterOrder() {
+
+        long total = 1L;
+        long newCount = 2L;
+        long processedCount = 3L;
+        long doneCount = 4L;
+        long todayCount = 5L;
+        long fullstackCount = 6L;
+        long frontendCount = 7L;
+        long backendCount = 8L;
+        long highPriorityCount = 9L;
+        long mediumPriorityCount = 10L;
+        long lowPriorityCount = 11L;
+
+        ClientsStatsRsDto dto = clientsMapper.createStatsDto(
+                total,
+                newCount,
+                processedCount,
+                doneCount,
+                todayCount,
+                fullstackCount,
+                frontendCount,
+                backendCount,
+                highPriorityCount,
+                mediumPriorityCount,
+                lowPriorityCount
+        );
+
+        assertNotNull(dto);
+
+        assertEquals(total, dto.getTotal());
+        assertEquals(newCount, dto.getNewCount());
+        assertEquals(processedCount, dto.getProcessedCount());
+        assertEquals(doneCount, dto.getDoneCount());
+        assertEquals(todayCount, dto.getTodayCount());
+        assertEquals(fullstackCount, dto.getFullstackCount());
+        assertEquals(frontendCount, dto.getFrontendCount());
+        assertEquals(backendCount, dto.getBackendCount());
+        assertEquals(highPriorityCount, dto.getHighPriorityCount());
+        assertEquals(mediumPriorityCount, dto.getMediumPriorityCount());
+        assertEquals(lowPriorityCount, dto.getLowPriorityCount());
+    }
+
+    @Test
+    @DisplayName("createStatsDto: тест с нулевыми значениями — все поля равны 0")
+    void createStatsDto_WithZeroValues_ShouldSetAllFieldsToZero() {
+        ClientsStatsRsDto dto = clientsMapper.createStatsDto(
+                0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
+                0L, 0L, 0L
+        );
+
+        assertNotNull(dto);
+
+        assertEquals(0L, dto.getTotal());
+        assertEquals(0L, dto.getNewCount());
+        assertEquals(0L, dto.getProcessedCount());
+        assertEquals(0L, dto.getDoneCount());
+        assertEquals(0L, dto.getTodayCount());
+
+        assertEquals(0L, dto.getFullstackCount());
+        assertEquals(0L, dto.getFrontendCount());
+        assertEquals(0L, dto.getBackendCount());
+
+        assertEquals(0L, dto.getHighPriorityCount());
+        assertEquals(0L, dto.getMediumPriorityCount());
+        assertEquals(0L, dto.getLowPriorityCount());
     }
 }
