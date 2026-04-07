@@ -54,17 +54,19 @@ public class Clients {
     @Column(nullable = false)
     Priority priority = Priority.MEDIUM;
 
+    @Builder.Default
     @Column
     String source = "Лендинг";
 
     @CreationTimestamp
     @Column(name = "created_at",
+            columnDefinition = "timestamp(6) with time zone",
             updatable = false, nullable = false)
     OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at",
-    nullable = false)
+            nullable = false)
     OffsetDateTime updatedAt;
 
     @Column( name = "processed_by")
